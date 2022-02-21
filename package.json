@@ -1,7 +1,7 @@
 {
   "name": "metafarmflowerbot",
   "version": "1.0.0",
-  "description": "Automatisation du P2E Meta Farm Flower",
+  "description": "Automatisation ssf-like",
   "main": "index.js",
   "scripts": {
     "start": "node index",
@@ -13,7 +13,7 @@
     "bot",
     "metafarmflower"
   ],
-  "author": "Zanganken",
+  "author": "Mojinet",
   "license": "ISC",
   "dependencies": {
     "@chainsafe/dappeteer": "^2.4.0",

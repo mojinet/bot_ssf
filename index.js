@@ -42,6 +42,7 @@ const main = async (acount) => {
 		if (firstTry){
 			console.log('Premiere tentative')
 			const connectButton = await page.$('#welcome .button')
+			await page.waitForTimeout(1000)
 			await connectButton.click()
 			await metamask.approve()
 		}else{
