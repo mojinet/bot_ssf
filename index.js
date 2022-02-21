@@ -8,56 +8,45 @@ config()
 // PK des sous-compte
 const subAcount = [
 	null, // pour que la premiere execution se fasse sur le compte principale
-	// process.env.METAMASK_SUBACCOUNT_1,
-	// process.env.METAMASK_SUBACCOUNT_2,
-	// process.env.METAMASK_SUBACCOUNT_3,
-	// process.env.METAMASK_SUBACCOUNT_4
+	process.env.METAMASK_SUBACCOUNT_1,
+	process.env.METAMASK_SUBACCOUNT_2,
+	process.env.METAMASK_SUBACCOUNT_3,
+	process.env.METAMASK_SUBACCOUNT_4
 ]
 
 // Opération principale
 const main = async (acount) => {
 
-	// initialisation des variables browser et metamask
-	let browser = await dappeteer.launch(puppeteer, {
-		metamaskVersion: dappeteer.RECOMMENDED_METAMASK_VERSION,
-	})
-	const metamask = await dappeteer.setupMetamask(browser, {
-		seed: process.env.METAMASK_SEED,
-		hideSeed: true,
-	})
+	// initialise les variables de controle
+	let success = false // sort de la boucle en cas de succes
+	let firstTry = true; // indique si c'est le premier essai
 
-	// ajout et sélection du réseau
-	await metamask.addNetwork({
-		networkName: process.env.NETWORK_NAME,
-		rpc: process.env.RPC,
-		chainId: process.env.CHAIN_ID,
-		symbol: process.env.SYMBOL,
-		explorer: process.env.EXPLORER,
-	})
-	await metamask.switchNetwork(process.env.NETWORK_NAME)
+	//switch sur sous-compte
+	if(acount != null){
+		await metamask.importPK(acount)
+		await metamask.switchAccount(acountNumber)
+		console.log('Import du compte '+ acountNumber +' réussie')
+	}
 
-	//switch sur sous-compte todo a faire...
-	// if(acount != null){
-	// 	await metamask.importPK(acount)
-	// 	await metamask.switchAccount(2)
-	// }
-
-	let success = false
-	let firstTry = true;
 	while (!success) {
+
 		// Ouverture de la page de jeu
-		console.log('----- Opération sur le compte')
-		const page = await browser.newPage()
+		console.log('Ouverture de la page')
+		var page = await browser.newPage()
 		await page.setViewport({width: 1280, height: 800}) // fix bug sur selection resource
 		await page.goto(process.env.GAME_URL, {
 			waitUntil: 'networkidle2',
 		})
+		await page.bringToFront() // retour au premier plan
 
 		// Connexion de metamask au jeu pour le premier essai
 		if (firstTry){
+			console.log('Premiere tentative')
 			const connectButton = await page.$('#welcome .button')
 			await connectButton.click()
-			await metamask.approve()
+			if (acountNumber == 1){ await metamask.approve() } // seul le premier compte doit approuvé todo a fix le compte ne change pas
+		}else{
+			console.log('/!| Nouvelle tentative')
 		}
 		await page.bringToFront() // retour au premier plan
 		console.log('wait : chargement de la page => 5 secondes') // todo a optimisé en await page.waitForSelector('#basket .message') ?
@@ -70,16 +59,16 @@ const main = async (acount) => {
 		await page.waitForTimeout(1000) // todo optimiser
 
 		// Recolte
-		await page.click('.dirt:nth-child(6)')
-		await page.click('.dirt:nth-child(6)')
-		await page.click('.dirt:nth-child(7)')
-		await page.click('.dirt:nth-child(7)')
-		await page.click('.dirt:nth-child(8)')
-		await page.click('.dirt:nth-child(8)')
-		await page.click('.dirt:nth-child(9)')
-		await page.click('.dirt:nth-child(9)')
-		await page.click('.dirt:nth-child(10)')
-		await page.click('.dirt:nth-child(10)')
+		await page.click('.'+ process.env.NAME_OF_TILES + ':nth-child(6)')
+		await page.click('.'+ process.env.NAME_OF_TILES + ':nth-child(6)')
+		await page.click('.'+ process.env.NAME_OF_TILES + ':nth-child(7)')
+		await page.click('.'+ process.env.NAME_OF_TILES + ':nth-child(7)')
+		await page.click('.'+ process.env.NAME_OF_TILES + ':nth-child(8)')
+		await page.click('.'+ process.env.NAME_OF_TILES + ':nth-child(8)')
+		await page.click('.'+ process.env.NAME_OF_TILES + ':nth-child(9)')
+		await page.click('.'+ process.env.NAME_OF_TILES + ':nth-child(9)')
+		await page.click('.'+ process.env.NAME_OF_TILES + ':nth-child(10)')
+		await page.click('.'+ process.env.NAME_OF_TILES + ':nth-child(10)')
 		console.log('Recolte terminé')
 
 		// Verification de la disponibilité du bouton de sauvegarde
@@ -111,40 +100,67 @@ const main = async (acount) => {
 				success = true
 				console.log('sauvegarde effectué')
 			} else {
-				console.log('sauvegarde non raisonable : nouvelle tentative')
+				console.log('/!| sauvegarde non raisonable : nouvelle tentative')
 				firstTry = false
 			}
 		}else{
-			console.log('sauvegarde indisponible')
+			console.log('/!| sauvegarde indisponible')
 			success = true
 		}
-
-		// Fermeture de la page
-		await page.bringToFront()
-		await page.close()
 	}
+	// fin des opérations
+	page.close()
+	acountNumber++
+	console.log('Fermeture de la page')
 	console.log('Operation terminer pour ce compte')
 }
 
-// todo a fixé
-function timer(timeBeforeStart) {
-	setTimeout(() => {  console.log('----- fin des opérations : redemarage dans ' + timeBeforeStart / 1000 / 60 / 60 + ' mn') }, timeBeforeStart);
+// Fonction d'attente
+function timeout(timeBeforeStart) {
+	return new Promise(resolve => setTimeout(resolve, timeBeforeStart));
+}
+async function sleep(timeBeforeStart) {
+	await timeout(timeBeforeStart);
+	return true;
 }
 
-// Boucle principale : infinie
+// Boucle principale
 while (true){
-	// initialisation de la mesure du temps d'execution
-	let startTime = new Date().getTime();
-	let endTime = 0;
 
+	// initialisation des variables de controle
+	let startTime = new Date().getTime()
+	let endTime = 0
+	var acountNumber = 1
+	console.log('***** Wake up !')
+
+	// initialisation des variables browser et metamask
+	var browser = await dappeteer.launch(puppeteer, {
+		metamaskVersion: dappeteer.RECOMMENDED_METAMASK_VERSION,
+	})
+	var metamask = await dappeteer.setupMetamask(browser, {
+		seed: process.env.METAMASK_SEED,
+		hideSeed: true,
+	})
+
+	// ajout et sélection du réseau
+	await metamask.addNetwork({
+		networkName: process.env.NETWORK_NAME,
+		rpc: process.env.RPC,
+		chainId: process.env.CHAIN_ID,
+		symbol: process.env.SYMBOL,
+		explorer: process.env.EXPLORER,
+	})
+	await metamask.switchNetwork(process.env.NETWORK_NAME)
 	// opération principale sur le jeu pour chaque compte
 	for (const acount of subAcount) {
-		console.log('ITERATION PRINCIPAL') //todo remove
+		console.log('----- Démarage des opérations pour ce compte')
 		await main(acount)
 	}
 
-	// relance le processus 1h apres todo a fixé
+	// relance le processus tout les DELAY_BETWEEN_REPEAT ms
+	await browser.close()
 	endTime = new Date().getTime() - startTime;
 	let timeBeforeStart = process.env.DELAY_BETWEEN_REPEAT - endTime;
-	await timer(timeBeforeStart)
+	console.log('----- fin des opérations : redemarage dans ' + Math.ceil(timeBeforeStart / 1000 / 60) + ' mn')
+	await sleep(timeBeforeStart)
 }
