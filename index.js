@@ -54,7 +54,7 @@ const main = async (acount) => {
 
 		// Selection de la ressource
 		await page.click('#basket .message')
-		await page.click('.box-panel:nth-child(2)')
+		await page.click('.box-panel:nth-child('+ process.env.RESSOURCE_NUMBER +')')
 		await page.click('.close-icon')
 		await page.waitForTimeout(1000) // todo optimiser
 
