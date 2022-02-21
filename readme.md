@@ -11,4 +11,4 @@ copy .env to .env.local and edit file
 ### fix metamask.approve()
 change dist>metamask>approve.js add after line 16 ```yield page.waitForTimeout(1000)``` 
 ### fix metamask.import()
-change dist>metamask>approve.js replace line 21 by```const importButton = yield page.waitForSelector('button.btn-primary');```
+change dist>metamask>import.js replace line 21 by```const importButton = yield page.waitForSelector('button.btn-primary');```
