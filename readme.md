@@ -1,8 +1,8 @@
-bot for ssf-like
+# bot_ssf
+a little task automation bot for P2E ssf-like
 
-how to ?
-
+## instalation
+```
 npm install
-copy .env to .env.local
-setup .env.local
-run !
+```
+copy .env to .env.local and edit file
