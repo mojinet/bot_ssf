@@ -24,7 +24,6 @@ const main = async (acount) => {
 	//switch sur sous-compte
 	if(acount != null){
 		await metamask.importPK(acount)
-		await metamask.switchAccount(acountNumber)
 		console.log('Import du compte '+ acountNumber +' réussie')
 	}
 
