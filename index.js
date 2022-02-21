@@ -44,19 +44,24 @@ const main = async (acount) => {
 			console.log('Premiere tentative')
 			const connectButton = await page.$('#welcome .button')
 			await connectButton.click()
-			if (acountNumber == 1){ await metamask.approve() } // seul le premier compte doit approuvé todo a fix le compte ne change pas
+			await metamask.approve()
 		}else{
 			console.log('/!| Nouvelle tentative')
 		}
+
+		// on attend que l'interface charge
+		console.log('wait : chargement de la page')
 		await page.bringToFront() // retour au premier plan
-		console.log('wait : chargement de la page => 5 secondes') // todo a optimisé en await page.waitForSelector('#basket .message') ?
-		await page.waitForTimeout(5000)
+		await page.waitForSelector('#halvening-banner', {visible: true})
+		await page.waitForTimeout(1000)
 
 		// Selection de la ressource
-		await page.click('#basket .message')
+		console.log('selection de la ressource N°' + process.env.RESSOURCE_NUMBER)
+		await page.click('#basket .basket-fruit')
+		await page.waitForSelector('.box-panel:nth-child('+ process.env.RESSOURCE_NUMBER +')', {visible: true})
 		await page.click('.box-panel:nth-child('+ process.env.RESSOURCE_NUMBER +')')
 		await page.click('.close-icon')
-		await page.waitForTimeout(1000) // todo optimiser
+		await page.waitForTimeout(500)
 
 		// Recolte
 		await page.click('.'+ process.env.NAME_OF_TILES + ':nth-child(6)')
@@ -109,7 +114,7 @@ const main = async (acount) => {
 		}
 	}
 	// fin des opérations
-	page.close()
+	browser.close()
 	acountNumber++
 	console.log('Fermeture de la page')
 	console.log('Operation terminer pour ce compte')
@@ -133,26 +138,27 @@ while (true){
 	var acountNumber = 1
 	console.log('***** Wake up !')
 
-	// initialisation des variables browser et metamask
-	var browser = await dappeteer.launch(puppeteer, {
-		metamaskVersion: dappeteer.RECOMMENDED_METAMASK_VERSION,
-	})
-	var metamask = await dappeteer.setupMetamask(browser, {
-		seed: process.env.METAMASK_SEED,
-		hideSeed: true,
-	})
-
-	// ajout et sélection du réseau
-	await metamask.addNetwork({
-		networkName: process.env.NETWORK_NAME,
-		rpc: process.env.RPC,
-		chainId: process.env.CHAIN_ID,
-		symbol: process.env.SYMBOL,
-		explorer: process.env.EXPLORER,
-	})
-	await metamask.switchNetwork(process.env.NETWORK_NAME)
 	// opération principale sur le jeu pour chaque compte
 	for (const acount of subAcount) {
+		// initialisation des variables browser et metamask
+		var browser = await dappeteer.launch(puppeteer, {
+			metamaskVersion: dappeteer.RECOMMENDED_METAMASK_VERSION,
+		})
+		var metamask = await dappeteer.setupMetamask(browser, {
+			seed: process.env.METAMASK_SEED,
+			hideSeed: true,
+		})
+
+		// ajout et sélection du réseau
+		await metamask.addNetwork({
+			networkName: process.env.NETWORK_NAME,
+			rpc: process.env.RPC,
+			chainId: process.env.CHAIN_ID,
+			symbol: process.env.SYMBOL,
+			explorer: process.env.EXPLORER,
+		})
+		await metamask.switchNetwork(process.env.NETWORK_NAME)
+
 		console.log('----- Démarage des opérations pour ce compte')
 		await main(acount)
 	}
